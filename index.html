@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  The permanent address (published by scripts/publish_link.ps1 to the public
+  GreenNinjaDa/terror repository's GitHub Pages). It holds nothing secret: only
+  today's tunnel link, which it opens full screen. It also keeps each player's
+  name and account token, because every new tunnel link is a new website with
+  empty storage.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Terror MMO</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; color: #d8d0c4; font-family: Georgia, "Times New Roman", serif; overflow: hidden; }
+      iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+      #closed { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 22px; line-height: 1.6; }
+      .dread { color: #c01010; }
+    </style>
+  </head>
+  <body>
+    <iframe id="game" src="https://ranks-christina-king-days.trycloudflare.com" allow="autoplay; fullscreen; pointer-lock"></iframe>
+    <div id="closed" hidden>The way down is <span class="dread">&nbsp;closed&nbsp;</span>.<br />Come back when the mine is open.</div>
+    <script>
+      const WAY_DOWN = "https://ranks-christina-king-days.trycloudflare.com";
+      const origin = new URL(WAY_DOWN).origin;
+      const game = document.getElementById("game");
+      let answered = false;
+      addEventListener("message", (e) => {
+        if (e.origin !== origin) return;
+        const d = e.data || {};
+        if (d.type === "terror-hello") {
+          answered = true;
+          const items = {};
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith("terror.")) items[key] = localStorage.getItem(key);
+          }
+          e.source.postMessage({ type: "terror-store", items }, origin);
+        } else if (d.type === "terror-save" && typeof d.key === "string" && d.key.startsWith("terror.")) {
+          localStorage.setItem(d.key, String(d.value));
+        }
+      });
+      game.addEventListener("load", () => game.focus());
+      // No game answered: the server is down and the link is stale.
+      setTimeout(() => {
+        if (answered) return;
+        game.remove();
+        document.getElementById("closed").hidden = false;
+      }, 15000);
+    </script>
+  </body>
+</html>
